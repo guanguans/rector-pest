@@ -38,6 +38,12 @@ return RectorConfig::configure()
 | `SimplifyExpectNotRector` | Converts `expect(!$x)->toBeTrue()` to `expect($x)->not->toBeTrue()` |
 | `ToBeTrueNotFalseRector` | Simplifies `->not->toBeFalse()` to `->toBeTrue()` and vice versa |
 | `UseEachModifierRector` | Converts `foreach` loops with `expect()` to `->each` modifier |
+| `SimplifyToLiteralBooleanRector` | Converts `->toBe(true)` to `->toBeTrue()` (and `false`, `null`, `[]`) |
+| `UseTypeMatchersRector` | Converts `expect(is_array($x))->toBeTrue()` to `expect($x)->toBeArray()` |
+| `UseToHaveCountRector` | Converts `expect(count($arr))->toBe(5)` to `expect($arr)->toHaveCount(5)` |
+| `UseInstanceOfMatcherRector` | Converts `expect($obj instanceof User)->toBeTrue()` to `expect($obj)->toBeInstanceOf(User::class)` |
+| `SimplifyComparisonExpectationsRector` | Converts `expect($x > 10)->toBeTrue()` to `expect($x)->toBeGreaterThan(10)` |
+| `UseToMatchRector` | Converts `expect(preg_match('/pattern/', $str))->toBe(1)` to `expect($str)->toMatch('/pattern/')` |
 
 ## Automate Pest Upgrades
 
@@ -172,6 +178,80 @@ expect($user)->toHaveMethod('getName');
 
 // After
 expect($user::class)->toHaveMethod('getName');
+```
+
+### SimplifyToLiteralBooleanRector
+
+```php
+// Before
+expect($value)->toBe(true);
+expect($value)->toBe(false);
+expect($value)->toBe(null);
+expect($array)->toEqual([]);
+
+// After
+expect($value)->toBeTrue();
+expect($value)->toBeFalse();
+expect($value)->toBeNull();
+expect($array)->toBeEmpty();
+```
+
+### UseTypeMatchersRector
+
+```php
+// Before
+expect(is_array($value))->toBeTrue();
+expect(is_string($value))->toBeTrue();
+
+// After
+expect($value)->toBeArray();
+expect($value)->toBeString();
+```
+
+### UseToHaveCountRector
+
+```php
+// Before
+expect(count($array))->toBe(5);
+
+// After
+expect($array)->toHaveCount(5);
+```
+
+### UseInstanceOfMatcherRector
+
+```php
+// Before
+expect($user instanceof User)->toBeTrue();
+
+// After
+expect($user)->toBeInstanceOf(User::class);
+```
+
+### SimplifyComparisonExpectationsRector
+
+```php
+// Before
+expect($value > 10)->toBeTrue();
+expect($value >= 10)->toBeTrue();
+expect($value < 5)->toBeTrue();
+expect($value <= 5)->toBeTrue();
+
+// After
+expect($value)->toBeGreaterThan(10);
+expect($value)->toBeGreaterThanOrEqual(10);
+expect($value)->toBeLessThan(5);
+expect($value)->toBeLessThanOrEqual(5);
+```
+
+### UseToMatchRector
+
+```php
+// Before
+expect(preg_match('/pattern/', $string))->toBe(1);
+
+// After
+expect($string)->toMatch('/pattern/');
 ```
 
 ## Running Rector
