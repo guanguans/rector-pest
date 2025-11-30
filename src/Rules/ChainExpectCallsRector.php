@@ -6,9 +6,7 @@ namespace MrPunyapal\RectorPest\Rules;
 
 use MrPunyapal\RectorPest\AbstractRector;
 use PhpParser\Node;
-use PhpParser\Node\Arg;
 use PhpParser\Node\Expr;
-use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Stmt\Expression;
 use Rector\Contract\PhpParser\Node\StmtsAwareInterface;
@@ -58,7 +56,6 @@ CODE_SAMPLE
         $stmts = $node->stmts;
         $hasChanged = false;
 
-        // Keep processing until no more changes
         do {
             $changedInPass = false;
 
@@ -137,89 +134,15 @@ CODE_SAMPLE
         return $node;
     }
 
-    /**
-     * Check if a method call is an expect() chain (expect()->...)
-     */
-    private function isExpectChain(MethodCall $methodCall): bool
-    {
-        $current = $methodCall;
-        while ($current->var instanceof MethodCall) {
-            $current = $current->var;
-        }
-
-        if (! $current->var instanceof FuncCall) {
-            return false;
-        }
-
-        return $this->isName($current->var, 'expect');
-    }
-
-    /**
-     * Get the argument from an expect() call
-     */
-    private function getExpectArgument(MethodCall $methodCall): ?Expr
-    {
-        $current = $methodCall;
-        while ($current->var instanceof MethodCall) {
-            $current = $current->var;
-        }
-
-        if (! $current->var instanceof FuncCall) {
-            return null;
-        }
-
-        $expectCall = $current->var;
-        if (! $this->isName($expectCall, 'expect')) {
-            return null;
-        }
-
-        if (! isset($expectCall->args[0])) {
-            return null;
-        }
-
-        $arg = $expectCall->args[0];
-        if (! $arg instanceof Arg) {
-            return null;
-        }
-
-        return $arg->value;
-    }
-
-    /**
-     * Build the chained method call with and()
-     */
     private function buildChainedCall(MethodCall $first, MethodCall $second, Expr $expectArg): MethodCall
     {
-        $current = $second;
-        $methods = [];
+        $methods = $this->collectChainMethods($second);
 
-        while ($current instanceof MethodCall) {
-            if ($current->var instanceof FuncCall && $this->isName($current->var, 'expect')) {
-                $methods[] = [
-                    'name' => $current->name,
-                    'args' => $current->args,
-                ];
-                break;
-            }
+        $andCall = new MethodCall($first, 'and', [$this->nodeFactory->createArg($expectArg)]);
 
-            $methods[] = [
-                'name' => $current->name,
-                'args' => $current->args,
-            ];
+        $result = $this->rebuildMethodChain($andCall, $methods);
 
-            $current = $current->var;
-        }
-
-        $methods = array_reverse($methods);
-
-        $result = $first;
-
-        $result = new MethodCall($result, 'and', [$this->nodeFactory->createArg($expectArg)]);
-
-        foreach ($methods as $method) {
-            $result = new MethodCall($result, $method['name'], $method['args']);
-        }
-
+        /** @var MethodCall $result */
         return $result;
     }
 }
