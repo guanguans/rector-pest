@@ -8,5 +8,16 @@ parameters:
     excludePaths:
         - tests/Fixture
         - tests/*/Fixture
+        - tests/*/*/Fixture
         - '*/Source/*'
         - '*/Expected/*'
+
+    reportUnmatchedIgnoredErrors: false
+
+    ignoreErrors:
+        -
+            identifier: class.notFound
+            message: '#Symplify\\RuleDocGenerator#'
+        -
+            identifier: missingType.generics
+            message: '#Method .+::getRuleDefinition\(\)#'
