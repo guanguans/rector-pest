@@ -60,7 +60,7 @@
           "pint --test"
         ],
         "test:types": "phpstan analyse --ansi",
-        "test:unit": "phpunit --colors=always",
+        "test:unit": "pest --parallel",
         "test": [
             "@test:lint",
             "@test:types",
