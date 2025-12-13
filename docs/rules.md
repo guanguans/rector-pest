@@ -39,7 +39,6 @@ Ensure type-check matchers (e.g. toBeInt, toBeInstanceOf) appear before value as
 - class: [`RectorPest\Rules\EnsureTypeChecksFirstRector`](../src/Rules/EnsureTypeChecksFirstRector.php)
 
 ```diff
- <?php
 -expect($a)->toBe(10)->toBeInt();
 +expect($a)->toBeInt()->toBe(10);
 ```
@@ -47,7 +46,6 @@ Ensure type-check matchers (e.g. toBeInt, toBeInstanceOf) appear before value as
 <br>
 
 ```diff
- <?php
 -expect($a)->toBe(10);
 -expect($a)->toBeInt();
 +expect($a)->toBeInt();
