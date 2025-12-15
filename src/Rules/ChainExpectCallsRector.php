@@ -184,8 +184,16 @@ CODE_SAMPLE
         /** @var MethodCall $second */
         $exprStmt->expr = $this->buildChainedCall($first, $second);
 
+        // preserve comments from the removed statement(s)
+        $collectedComments = $exprStmt->getAttribute('comments', []);
+        $collectedComments = array_merge($collectedComments, $nextExprStmt->getAttribute('comments', []));
+
         unset($stmts[$key + 1]);
         $stmts = array_values($stmts);
+
+        if ($collectedComments !== []) {
+            $exprStmt->setAttribute('comments', $collectedComments);
+        }
     }
 
     /**
@@ -211,6 +219,7 @@ CODE_SAMPLE
 
         $collectIndex = $key + 1;
         $allSecondMethods = [];
+        $collectedComments = $exprStmt->getAttribute('comments', []);
 
         while (isset($stmts[$collectIndex])) {
             $currStmt = $stmts[$collectIndex];
@@ -241,6 +250,9 @@ CODE_SAMPLE
             $methods = $this->collectChainMethods($currMethodCall);
             $allSecondMethods = array_merge($allSecondMethods, $methods);
 
+            // collect comments from statements we are removing
+            $collectedComments = array_merge($collectedComments, $currStmt->getAttribute('comments', []));
+
             unset($stmts[$collectIndex]);
             $collectIndex++;
         }
@@ -255,6 +267,11 @@ CODE_SAMPLE
         $result = $this->rebuildMethodChain($andCall, $allSecondMethods);
 
         $exprStmt->expr = $result;
+
+        // attach collected comments to the merged statement
+        if ($collectedComments !== []) {
+            $exprStmt->setAttribute('comments', $collectedComments);
+        }
 
         $stmts = array_values($stmts);
 
