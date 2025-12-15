@@ -101,6 +101,11 @@ CODE_SAMPLE
                 continue;
             }
 
+            // skip chains that explicitly call `not()` as a method — do not reorder
+            if ($this->containsNotMethod($methods)) {
+                continue;
+            }
+
             // Reorder type matchers before non-type matchers within each segment
             // separated by `and` calls. Preserve `and` methods and their args.
             $newMethods = $this->reorderWithinAndSegments($methods);
@@ -259,5 +264,28 @@ CODE_SAMPLE
         }
 
         return $result;
+    }
+
+    /**
+     * Detect if any method in the collected chain is the `not` method.
+     *
+     * @param array<array{name: Expr|\PhpParser\Node\Identifier|string, args: array<Arg|VariadicPlaceholder>}> $methods
+     */
+    private function containsNotMethod(array $methods): bool
+    {
+        foreach ($methods as $m) {
+            $nameValue = $m['name'];
+            if ($nameValue instanceof Node) {
+                $name = $this->getName($nameValue);
+            } else {
+                $name = $nameValue;
+            }
+
+            if ($name === 'not') {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
