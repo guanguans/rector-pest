@@ -182,45 +182,6 @@ CODE_SAMPLE
         return ['type' => $type, 'non_type' => $nonType];
     }
 
-    /**
-     * Determine if the original ordering requires reordering within the same chain
-     *
-     * @param array<array{name: Expr|\PhpParser\Node\Identifier|string, args: array<Arg|VariadicPlaceholder>}> $orig
-     * @param array{type: array<array{name: Expr|\PhpParser\Node\Identifier|string, args: array<Arg|VariadicPlaceholder>}>, non_type: array<array{name: Expr|\PhpParser\Node\Identifier|string, args: array<Arg|VariadicPlaceholder>}>} $partitioned
-     */
-    private function needsReorderWithin(array $orig, array $partitioned): bool
-    {
-        if ($partitioned['type'] === [] || $partitioned['non_type'] === []) {
-            return false;
-        }
-
-        // if a type matcher appears after a non-type matcher in original order => reorder
-        $foundNonType = false;
-        foreach ($orig as $m) {
-            $nameValue = $m['name'];
-            if ($nameValue instanceof Node) {
-                $name = $this->getName($nameValue);
-            } else {
-                // $nameValue is string
-                $name = $nameValue;
-            }
-
-            if ($name === null) {
-                continue;
-            }
-
-            if ($this->isTypeMatcherName($name)) {
-                if ($foundNonType) {
-                    return true;
-                }
-            } else {
-                $foundNonType = true;
-            }
-        }
-
-        return false;
-    }
-
     private function isTypeMatcherName(string $name): bool
     {
         return in_array($name, self::$typeMatchers, true);
@@ -236,15 +197,36 @@ CODE_SAMPLE
     private function reorderWithinAndSegments(array $methods): array
     {
         $result = [];
+        /** @var array<array{name: Expr|\PhpParser\Node\Identifier|string, args: array<Arg|VariadicPlaceholder>}> $segment */
         $segment = [];
 
-        $flushSegment = function () use (&$segment, &$result) {
-            if ($segment === []) {
-                return;
+        $flushSegment = function () use (&$segment, &$result): void {
+            // Process the current segment
+            $partitioned = $this->partitionTypeAndNonType($segment);
+
+            // Check if we need to reorder: type matcher after non-type matcher
+            $needsReorder = false;
+            $hasType = $partitioned['type'] !== [];
+            $hasNonType = $partitioned['non_type'] !== [];
+
+            if ($hasType && $hasNonType) {
+                $foundNonType = false;
+                foreach ($segment as $m) {
+                    $nameValue = $m['name'];
+                    $name = $nameValue instanceof Node ? $this->getName($nameValue) : $nameValue;
+
+                    if ($name !== null && $this->isTypeMatcherName($name)) {
+                        if ($foundNonType) {
+                            $needsReorder = true;
+                            break;
+                        }
+                    } else {
+                        $foundNonType = true;
+                    }
+                }
             }
 
-            $partitioned = $this->partitionTypeAndNonType($segment);
-            if ($this->needsReorderWithin($segment, $partitioned)) {
+            if ($needsReorder) {
                 foreach (array_merge($partitioned['type'], $partitioned['non_type']) as $m) {
                     $result[] = $m;
                 }
@@ -267,7 +249,9 @@ CODE_SAMPLE
 
             if ($name === 'and') {
                 // finish current segment, then add the `and` method itself
-                $flushSegment();
+                if ($segment !== []) {
+                    $flushSegment();
+                }
                 $result[] = $m;
                 continue;
             }
@@ -275,7 +259,9 @@ CODE_SAMPLE
             $segment[] = $m;
         }
 
-        $flushSegment();
+        if ($segment !== []) {
+            $flushSegment();
+        }
 
         return $result;
     }
