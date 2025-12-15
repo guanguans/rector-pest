@@ -8,6 +8,7 @@ use PhpParser\Node;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr;
 use PhpParser\Node\Expr\MethodCall;
+use PhpParser\Node\Identifier;
 use PhpParser\Node\Stmt\Expression;
 use PhpParser\Node\VariadicPlaceholder;
 use Rector\PhpParser\Enum\NodeGroup;
@@ -63,9 +64,6 @@ CODE_SAMPLE
         return NodeGroup::STMTS_AWARE;
     }
 
-    /**
-     * @param Node&object $node
-     */
     public function refactor(Node $node): ?Node
     {
         if (! property_exists($node, 'stmts') || $node->stmts === null) {
@@ -155,8 +153,8 @@ CODE_SAMPLE
     /**
      * Partition collected methods into type vs non-type preserving original order
      *
-     * @param array<array{name: Expr|\PhpParser\Node\Identifier|string, args: array<Arg|VariadicPlaceholder>}> $methods
-     * @return array{type: array<array{name: Expr|\PhpParser\Node\Identifier|string, args: array<Arg|VariadicPlaceholder>}>, non_type: array<array{name: Expr|\PhpParser\Node\Identifier|string, args: array<Arg|VariadicPlaceholder>}>}
+     * @param array<array{name: Expr|Identifier|string, args: array<Arg|VariadicPlaceholder>}> $methods
+     * @return array{type: array<array{name: Expr|Identifier|string, args: array<Arg|VariadicPlaceholder>}>, non_type: array<array{name: Expr|Identifier|string, args: array<Arg|VariadicPlaceholder>}>}
      */
     private function partitionTypeAndNonType(array $methods): array
     {
@@ -191,13 +189,13 @@ CODE_SAMPLE
      * Reorder type matchers inside each segment separated by `and`.
      * Returns the new flattened methods list (root->leaf order).
      *
-     * @param array<array{name: Expr|\PhpParser\Node\Identifier|string, args: array<Arg|VariadicPlaceholder>}> $methods
-     * @return array<array{name: Expr|\PhpParser\Node\Identifier|string, args: array<Arg|VariadicPlaceholder>}>
+     * @param array<array{name: Expr|Identifier|string, args: array<Arg|VariadicPlaceholder>}> $methods
+     * @return array<array{name: Expr|Identifier|string, args: array<Arg|VariadicPlaceholder>}>
      */
     private function reorderWithinAndSegments(array $methods): array
     {
         $result = [];
-        /** @var array<array{name: Expr|\PhpParser\Node\Identifier|string, args: array<Arg|VariadicPlaceholder>}> $segment */
+        /** @var array<array{name: Expr|Identifier|string, args: array<Arg|VariadicPlaceholder>}> $segment */
         $segment = [];
 
         $flushSegment = function () use (&$segment, &$result): void {
@@ -241,17 +239,14 @@ CODE_SAMPLE
 
         foreach ($methods as $m) {
             $nameValue = $m['name'];
-            if ($nameValue instanceof Node) {
-                $name = $this->getName($nameValue);
-            } else {
-                $name = $nameValue;
-            }
+            $name = $nameValue instanceof Node ? $this->getName($nameValue) : $nameValue;
 
             if ($name === 'and') {
                 // finish current segment, then add the `and` method itself
                 if ($segment !== []) {
                     $flushSegment();
                 }
+
                 $result[] = $m;
                 continue;
             }
