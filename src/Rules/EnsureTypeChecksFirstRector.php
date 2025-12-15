@@ -27,6 +27,11 @@ final class EnsureTypeChecksFirstRector extends AbstractRector
         'toBeCallable', 'toBeObject', 'toBeScalar', 'toBeResource',
     ];
 
+    /**
+     * @var string[]
+     */
+    public static array $prefixModifiers = ['not', 'each'];
+
     public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition(
@@ -229,13 +234,13 @@ CODE_SAMPLE
                 $propertyEntries = array_values(array_filter($partitioned['non_type'], function (array $m): bool {
                     $nameValue = $m['name'];
                     $name = $nameValue instanceof Node ? $this->getName($nameValue) : $nameValue;
-                    return $name === 'not';
+                    return in_array($name, self::$prefixModifiers, true);
                 }));
 
                 $otherNonType = array_values(array_filter($partitioned['non_type'], function (array $m): bool {
                     $nameValue = $m['name'];
                     $name = $nameValue instanceof Node ? $this->getName($nameValue) : $nameValue;
-                    return $name !== 'not';
+                    return ! in_array($name, self::$prefixModifiers, true);
                 }));
 
                 foreach (array_merge($propertyEntries, $partitioned['type'], $otherNonType) as $m) {

@@ -8,3 +8,6 @@ expect($a)->toBeInt()->toBe(10);
 
 expect($a)->not()->toBeNull();
 expect($a)->not->toBeNull();
+
+expect($a)->each()->toBeNull();
+expect($a)->each->toBeNull();
