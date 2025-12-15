@@ -103,6 +103,12 @@ CODE_SAMPLE
                 continue;
             }
 
+            // do not attempt to reorder within chains that use ->and(),
+            // since ->and() introduces a new subject and should be left intact
+            if ($this->containsAndMethod($methods)) {
+                continue;
+            }
+
             $partitioned = $this->partitionTypeAndNonType($methods);
 
             // if any type method appears after a non-type method, reorder within the same chain
@@ -223,5 +229,28 @@ CODE_SAMPLE
     private function isTypeMatcherName(string $name): bool
     {
         return in_array($name, self::$typeMatchers, true);
+    }
+
+    /**
+     * Detect if any method in the collected chain is the `and` method.
+     *
+     * @param array<array{name: Expr|\PhpParser\Node\Identifier|string, args: array<Arg|VariadicPlaceholder>}> $methods
+     */
+    private function containsAndMethod(array $methods): bool
+    {
+        foreach ($methods as $m) {
+            $nameValue = $m['name'];
+            if ($nameValue instanceof Node) {
+                $name = $this->getName($nameValue);
+            } else {
+                $name = $nameValue;
+            }
+
+            if ($name === 'and') {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
