@@ -132,7 +132,7 @@ abstract class AbstractRector extends BaseAbstractRector implements DocumentedRu
     /**
      * Collect all method calls in a chain from root to leaf
      *
-     * @return array<array{name: Expr|Identifier|string, args: array<Arg|VariadicPlaceholder>}>
+     * @return array<array{name: Expr|Identifier|string, args: array<Arg|VariadicPlaceholder>, is_property?: bool}>
      */
     protected function collectChainMethods(MethodCall $methodCall): array
     {
@@ -173,7 +173,7 @@ abstract class AbstractRector extends BaseAbstractRector implements DocumentedRu
     /**
      * Rebuild a method chain from a base expression
      *
-     * @param array<array{name: Expr|Identifier|string, args: array<Arg|VariadicPlaceholder>}> $methods
+     * @param array<array{name: Expr|Identifier|string, args: array<Arg|VariadicPlaceholder>, is_property?: bool}> $methods
      */
     protected function rebuildMethodChain(Expr $base, array $methods): Expr
     {
