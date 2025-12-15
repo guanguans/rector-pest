@@ -23,8 +23,6 @@ final class ToBeTrueNotFalseRector extends AbstractRector
     private const OPPOSITE_MATCHERS = [
         'toBeFalse' => 'toBeTrue',
         'toBeTrue' => 'toBeFalse',
-        'toBeNull' => 'toBeNull',
-        'toBeEmpty' => 'toBeEmpty',
     ];
 
     public function getRuleDefinition(): RuleDefinition
