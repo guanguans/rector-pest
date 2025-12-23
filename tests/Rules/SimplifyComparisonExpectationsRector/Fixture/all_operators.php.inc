@@ -6,7 +6,6 @@ expect($value >= 10)->toBeTrue();
 expect($value < 5)->toBeTrue();
 expect($value <= 5)->toBeTrue();
 
-?>
 -----
 <?php
 
