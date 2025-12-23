@@ -26,6 +26,7 @@ final class UseToEndWithRector extends AbstractRector
 
     private const MATCHER_NAME = 'toEndWith';
 
+    // @codeCoverageIgnoreStart
     public function getRuleDefinition(): RuleDefinition
     {
         return new RuleDefinition(
@@ -45,6 +46,8 @@ CODE_SAMPLE
             ]
         );
     }
+
+    // @codeCoverageIgnoreEnd
 
     /**
      * @return array<class-string<Node>>
