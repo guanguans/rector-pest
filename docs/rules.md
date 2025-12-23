@@ -1,4 +1,4 @@
-# 25 Rules Overview
+# 26 Rules Overview
 
 ## ChainExpectCallsRector
 
@@ -407,6 +407,23 @@ Converts `expect(is_array($x))->toBeTrue()` to `expect($x)->toBeArray()`
 +expect($value)->toBeString();
 +expect($value)->toBeInt();
 +expect($value)->toBeBool();
+```
+
+<br>
+
+## UsesToExtendRector
+
+Converts `uses()` and `pest()->uses()` to `pest()->extend()` for classes and `pest()->use()` for traits
+
+- class: [`RectorPest\Rules\Pest2ToPest3\UsesToExtendRector`](../src/Rules/Pest2ToPest3/UsesToExtendRector.php)
+
+```diff
+-uses(Tests\TestCase::class)->in('Feature');
+-uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
+-pest()->uses(Tests\TestCase::class)->in('Feature');
++pest()->extend(Tests\TestCase::class)->in('Feature');
++pest()->use(Illuminate\Foundation\Testing\RefreshDatabase::class);
++pest()->extend(Tests\TestCase::class)->in('Feature');
 ```
 
 <br>
