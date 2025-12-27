@@ -12,6 +12,7 @@ use PhpParser\Node\Stmt\Expression;
 use Rector\Contract\PhpParser\Node\StmtsAwareInterface;
 use Rector\PhpParser\Enum\NodeGroup;
 use RectorPest\AbstractRector;
+use RectorPest\Concerns\ExpectChainCombining;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\CodeSample;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
 
@@ -23,6 +24,8 @@ use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
  */
 final class ChainDifferentVariableExpectCallsRector extends AbstractRector
 {
+    use ExpectChainCombining;
+
     // @codeCoverageIgnoreStart
     public function getRuleDefinition(): RuleDefinition
     {
@@ -85,65 +88,18 @@ CODE_SAMPLE
                     continue;
                 }
 
-                if (! $stmt instanceof Expression) {
-                    continue;
-                }
-
-                if (! $stmt->expr instanceof MethodCall) {
-                    continue;
-                }
-
-                $methodCall = $stmt->expr;
-                if (! $this->isExpectChain($methodCall)) {
-                    continue;
-                }
-
-                $firstExpectArg = $this->getExpectArgument($methodCall);
-                if (! $firstExpectArg instanceof Expr) {
-                    continue;
-                }
-
-                if (! isset($stmts[$key + 1])) {
-                    continue;
-                }
-
-                $nextStmt = $stmts[$key + 1];
-                if (! $nextStmt instanceof Expression) {
-                    continue;
-                }
-
-                if (! $nextStmt->expr instanceof MethodCall) {
-                    continue;
-                }
-
-                $nextMethodCall = $nextStmt->expr;
-                if (! $this->isExpectChain($nextMethodCall)) {
-                    continue;
-                }
-
-                $nextExpectArg = $this->getExpectArgument($nextMethodCall);
-                if (! $nextExpectArg instanceof Expr) {
-                    continue;
-                }
-
-                // don't merge across comments — preserve explicit separation
-                $currentComments = (array) $stmt->getAttribute('comments', []);
-                $nextComments = (array) $nextStmt->getAttribute('comments', []);
-                if ($currentComments !== []) {
-                    continue;
-                }
-
-                if ($nextComments !== []) {
+                $pair = $this->findMergeableExpectPair($stmts, $key);
+                if ($pair === null) {
                     continue;
                 }
 
                 // Only handle different variables - same variables should use ChainSameVariableExpectCallsRector
-                if ($this->nodeComparator->areNodesEqual($firstExpectArg, $nextExpectArg)) {
+                if ($this->nodeComparator->areNodesEqual($pair['expectArg'], $pair['nextExpectArg'])) {
                     continue;
                 }
 
                 // Try to merge the following expect() chains into a single ->and(...) chain
-                if ($this->mergeDifferentVariableChains($stmts, $key)) {
+                if ($this->mergeDifferentVariableChains($stmts, $pair)) {
                     $hasChanged = true;
                     $changedInPass = true;
 
@@ -163,24 +119,14 @@ CODE_SAMPLE
 
     /**
      * @param array<Node\Stmt> $stmts
+     * @param array{key: int, stmt: Expression, methodCall: MethodCall, expectArg: Expr, nextStmt: Expression, nextMethodCall: MethodCall, nextExpectArg: Expr} $pair
      */
-    private function mergeDifferentVariableChains(array &$stmts, int $key): bool
+    private function mergeDifferentVariableChains(array &$stmts, array $pair): bool
     {
-        /** @var Expression $exprStmt */
-        $exprStmt = $stmts[$key];
-        /** @var Expression $nextExprStmt */
-        $nextExprStmt = $stmts[$key + 1];
-
-        $firstMethodCall = $exprStmt->expr;
-        $nextMethodCall = $nextExprStmt->expr;
-
-        /** @var MethodCall $firstMethodCall */
-        /** @var MethodCall $nextMethodCall */
-
-        $targetExpectArg = $this->getExpectArgument($nextMethodCall);
-        if (! $targetExpectArg instanceof Expr) {
-            return false;
-        }
+        $exprStmt = $pair['stmt'];
+        $firstMethodCall = $pair['methodCall'];
+        $targetExpectArg = $pair['nextExpectArg'];
+        $key = $pair['key'];
 
         $collectIndex = $key + 1;
         $allSecondMethods = [];
@@ -204,7 +150,6 @@ CODE_SAMPLE
             }
 
             $currMethodCall = $currStmt->expr;
-            /** @var MethodCall $currMethodCall */
             if (! $this->isExpectChain($currMethodCall)) {
                 break;
             }
@@ -239,25 +184,7 @@ CODE_SAMPLE
 
         $exprStmt->expr = $result;
 
-        // attach collected comments to the merged statement (filter out empty ones)
-        if ($collectedComments !== []) {
-            $filtered = array_values(array_filter($collectedComments, function ($c): bool {
-                if (! is_object($c)) {
-                    return false;
-                }
-
-                if (method_exists($c, 'getText')) {
-                    $text = $c->getText();
-                    return is_string($text) && trim($text) !== '';
-                }
-
-                return true;
-            }));
-
-            if ($filtered !== []) {
-                $exprStmt->setAttribute('comments', $filtered);
-            }
-        }
+        $this->preserveComments($exprStmt, $collectedComments);
 
         $stmts = array_values($stmts);
 
