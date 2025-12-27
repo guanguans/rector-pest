@@ -15,6 +15,10 @@ use RectorPest\AbstractRector;
 use Symplify\RuleDocGenerator\ValueObject\CodeSample\CodeSample;
 use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
 
+/**
+ * @deprecated Use ChainSameVariableExpectCallsRector and ChainDifferentVariableExpectCallsRector instead.
+ *             This combined rule will be removed in a future version.
+ */
 final class ChainExpectCallsRector extends AbstractRector
 {
     // @codeCoverageIgnoreStart
