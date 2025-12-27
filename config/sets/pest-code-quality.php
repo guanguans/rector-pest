@@ -3,8 +3,7 @@
 declare(strict_types=1);
 
 use Rector\Config\RectorConfig;
-use RectorPest\Rules\ChainDifferentVariableExpectCallsRector;
-use RectorPest\Rules\ChainSameVariableExpectCallsRector;
+use RectorPest\Rules\ChainExpectCallsRector;
 use RectorPest\Rules\EnsureTypeChecksFirstRector;
 use RectorPest\Rules\SimplifyComparisonExpectationsRector;
 use RectorPest\Rules\SimplifyExpectNotRector;
@@ -78,8 +77,6 @@ return static function (RectorConfig $rectorConfig): void {
 
     // Post-processing rules - must run LAST after other rules have transformed matchers
     // Rector executes rules in configuration order
-    $rectorConfig->rule(ChainSameVariableExpectCallsRector::class);      // Merges same-variable expect() calls
-    $rectorConfig->rule(ChainDifferentVariableExpectCallsRector::class); // Chains different-variable expect() calls with ->and()
-    $rectorConfig->rule(EnsureTypeChecksFirstRector::class);             // Reorders type checks within chains
+    $rectorConfig->rule(ChainExpectCallsRector::class);      // Merges separate expect() calls
+    $rectorConfig->rule(EnsureTypeChecksFirstRector::class); // Reorders type checks within chains
 };
-
