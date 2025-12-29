@@ -70,6 +70,11 @@ CODE_SAMPLE
         $firstCall = null;
 
         while ($current instanceof MethodCall && $this->isName($current->name, 'toHaveProperty')) {
+            // Skip if any of the toHaveProperty calls has a ->not modifier
+            if ($this->hasNotModifier($current)) {
+                return null;
+            }
+
             if (count($current->args) < 1) {
                 return null;
             }
