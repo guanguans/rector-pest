@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.8](https://github.com/MrPunyapal/rector-pest/compare/0.1.7...0.1.8) - 2026-01-01
+
+### What's Changed
+
+* Fix: remove only rule by @MrPunyapal in https://github.com/MrPunyapal/rector-pest/pull/22
+
+**Full Changelog**: https://github.com/MrPunyapal/rector-pest/compare/0.1.7...0.1.8
+
 ## [0.1.7](https://github.com/MrPunyapal/rector-pest/compare/0.1.6...0.1.7) - 2025-12-29
 
 **Full Changelog**: https://github.com/MrPunyapal/rector-pest/compare/0.1.6...0.1.7
